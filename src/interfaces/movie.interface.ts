@@ -1,4 +1,4 @@
-export interface IMovies {
+export interface IMovie {
   popularity: number;
   vote_count: number;
   video: boolean;
@@ -13,4 +13,11 @@ export interface IMovies {
   vote_average: number;
   overview: string;
   release_date: string;
+}
+
+export interface IFetchedMoviesTypings {
+  page: number;
+  total_results: number;
+  total_pages: number;
+  results: IMovie[];
 }
