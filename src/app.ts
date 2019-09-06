@@ -1,9 +1,9 @@
 import bodyParser from "body-parser";
 import express from "express";
 
-import { fetchGenre, fetchMovie } from "./utils";
 import { IMovieGenres } from "./interfaces/genre.interface";
 import { IMovie } from "./interfaces/movie.interface";
+import { fetchGenre, fetchMovie } from "./utils";
 
 // Create Express server
 const app = express();
