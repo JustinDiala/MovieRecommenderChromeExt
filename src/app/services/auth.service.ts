@@ -1,7 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { AngularFireAuth } from "@angular/fire/auth";
-import { IFetchedMyPlaylistTypings } from "../interfaces/playlist.interface";
+import { YoutubeCategories } from "../interfaces/videoCategories.interface";
 
 declare var gapi: any;
 
@@ -44,23 +44,47 @@ export class AuthService {
                 scope: SCOPES
               })
               .then(
-                function() {
+                () => {
                   console.log("Sign-in successful");
-                  gapi.client.youtube.channels
+
+                  gapi.client.youtube.videoCategories
                     .list({
-                      part: "contentDetails",
-                      //categoryId: "UCU1y1NaQWVKrnAuoaJs5NLw",
-                      mine: true
+                      part: "snippet",
+                      regionCode: "CA"
                     })
                     .then(
-                      (playlistData: IFetchedMyPlaylistTypings) => {
-                        console.log(
-                          playlistData.result.items[0].contentDetails
-                            .relatedPlaylists.likes
+                      (
+                        fetchedCategories: YoutubeCategories.CategoryFetched
+                      ) => {
+                        let ytCategories = fetchedCategories.result.items.map(
+                          category => {
+                            let x: YoutubeCategories.ICategory = {
+                              categoryID: category.id,
+                              categoryTitle: category.snippet.title
+                            };
+
+                            return x;
+                          }
                         );
+                        console.log(ytCategories);
+
+                        gapi.client.youtube.videos
+                          .list({
+                            part: "snippet",
+                            myRating: "like"
+                          })
+                          .then(
+                            function(response) {
+                              // Handle the results here (response.result has the parsed body).
+                              console.log(response);
+                            },
+                            function(err) {
+                              console.error("Execute error", err);
+                            }
+                          );
                       },
-                      err => {
-                        console.log("Error in fetching playlist", err);
+                      function(err) {
+                        console.error("Execute error", err);
                       }
                     );
                 },
