@@ -53,8 +53,7 @@ export class AuthService {
                       mine: true
                     })
                     .then(
-                      response => {
-                        let playlistData: IFetchedMyPlaylistTypings = response;
+                      (playlistData: IFetchedMyPlaylistTypings) => {
                         console.log(
                           playlistData.result.items[0].contentDetails
                             .relatedPlaylists.likes
