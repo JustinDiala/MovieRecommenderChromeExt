@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Observable } from "rxjs";
 import { AngularFireAuth } from "@angular/fire/auth";
+import { IFetchedMyPlaylistTypings } from "../interfaces/playlist.interface";
 
 declare var gapi: any;
 
@@ -47,15 +48,19 @@ export class AuthService {
                   console.log("Sign-in successful");
                   gapi.client.youtube.channels
                     .list({
-                      part: "snippet,contentDetails,statistics",
+                      part: "contentDetails",
                       //categoryId: "UCU1y1NaQWVKrnAuoaJs5NLw",
                       mine: true
                     })
                     .then(
-                      function(response) {
-                        console.log("Response", response);
+                      response => {
+                        let playlistData: IFetchedMyPlaylistTypings = response;
+                        console.log(
+                          playlistData.result.items[0].contentDetails
+                            .relatedPlaylists.likes
+                        );
                       },
-                      function(err) {
+                      err => {
                         console.log("Error in fetching playlist", err);
                       }
                     );
