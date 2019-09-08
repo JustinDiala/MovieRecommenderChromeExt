@@ -1,7 +1,9 @@
 import { Injectable } from "@angular/core";
-import { Observable } from "rxjs";
-import { AngularFireAuth } from "@angular/fire/auth";
+import { BehaviorSubject } from "rxjs";
 import { YoutubeCategories } from "../interfaces/videoCategories.interface";
+import { YoutubeVideos } from '../interfaces/myLikedVideos.interface';
+import { IMovieGenres } from '../interfaces/genre.interface';
+import { TheMovieDBService } from './the-movie-db.service';
 
 declare var gapi: any;
 
@@ -15,10 +17,11 @@ var SCOPES: string =
   providedIn: "root"
 })
 export class AuthService {
-  user$: Observable<firebase.User>;
 
-  constructor(public afAuth: AngularFireAuth) {
-    // this.initClient();
+  theMovieDBGenres$: BehaviorSubject<number[]> = new BehaviorSubject(null)
+
+  constructor(public theMovieDBService: TheMovieDBService) {
+    this.initClient();
   }
 
   initClient() {
@@ -66,29 +69,38 @@ export class AuthService {
                             return x;
                           }
                         );
-                        console.log(ytCategories);
+
+
+                        //console.log(ytCategories);
+
 
                         gapi.client.youtube.videos
                           .list({
                             part: "snippet",
-                            myRating: "like"
+                            myRating: "like",
+                            maxResults: 50,
                           })
                           .then(
-                            function(response) {
+                            async (response: YoutubeVideos.IMyLikedVideosFetched) => {
                               // Handle the results here (response.result has the parsed body).
-                              console.log(response);
+
+                              let movieGenres = await this.theMovieDBService.fetchGenre();
+
+                              this.theMovieDBGenres$.next(
+                                this.recommenderAlgorithm(ytCategories, response.result.items, await movieGenres.toPromise())
+                              )
                             },
-                            function(err) {
+                            (err) => {
                               console.error("Execute error", err);
                             }
                           );
                       },
-                      function(err) {
+                      function (err) {
                         console.error("Execute error", err);
                       }
                     );
                 },
-                function(err) {
+                function (err) {
                   console.error("Error signing in", err);
                 }
               );
@@ -96,5 +108,74 @@ export class AuthService {
           //
         });
     });
+  }
+
+
+  getMovieDBGenres() {
+    return this.theMovieDBGenres$.asObservable();
+  }
+
+
+  recommenderAlgorithm(ytCategories: YoutubeCategories.ICategory[], likedVideos: YoutubeVideos.Item[], movieGenres: IMovieGenres[]) {
+
+    let categoriesMap = {
+      "1": [16],
+      "2": [28],
+      "10": [10402],
+      "15": [18],
+      "17": [28, 53],
+      // "18":[],
+      "19": [12],
+      "20": [878, 28],
+      "21": [99],
+      "22": [99],
+      "23": [35],
+      "24": [35, 18],
+      "25": [99, 18],
+      "26": [10749],
+      "27": [99, 36],
+      "28": [878],
+      "30": [10770],
+      "31": [16],
+      "32": [28, 12],
+      "33": [99],
+      "34": [35],
+      "35": [80, 36, 10752],
+      "36": [10749, 18,],
+      "37": [10751],
+      "38": [],
+      "39": [9648, 80, 27, 10752],
+      "40": [878, 14],
+      "41": [9648, 53, 10752],
+      //"42":[],
+      //"43":[],
+      //"44":[],
+
+    }
+
+    //let truthArray:boolean[];
+    let myLikedVideoCategories: string[] = [];
+    let objectTruths = {};
+    likedVideos.forEach(movie => {
+      myLikedVideoCategories = [...myLikedVideoCategories, movie.snippet.categoryId];
+      objectTruths[Number(movie.snippet.categoryId)] = true;
+    });
+    let categoriesTally = {}
+    Object.keys(objectTruths).forEach(categoryID => {
+
+      categoriesTally[Number(categoryID)] = myLikedVideoCategories.filter(myCategoryID =>
+        myCategoryID === categoryID
+      ).length
+
+    })
+
+    let youtubeCategoriesKeysSorted = Object.keys(categoriesTally).sort((a, b) => { return categoriesTally[b] - categoriesTally[a] })
+    let theMovieDBCategories = youtubeCategoriesKeysSorted.map(youtubeCategoryID => {
+      return categoriesMap[youtubeCategoryID]
+    })
+    const flattenedArray = [].concat(...theMovieDBCategories);
+    let flattenedUniqueArray: number[] = [...new Set(flattenedArray)].filter(theMovieDBCategories => theMovieDBCategories)
+    return flattenedUniqueArray;
+
   }
 }

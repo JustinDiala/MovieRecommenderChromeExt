@@ -24,9 +24,9 @@ export class TheMovieDBService {
     );
   }
 
-  async fetchMovie() {
+  async fetchMovie(genres:number) {
     let sampleMovieURL: string =
-      "https://api.themoviedb.org/3/discover/movie?with_genres=18&api_key=b7ef60376b50d5774e2b4318bd6e2c45&language=en-US";
+      "https://api.themoviedb.org/3/discover/movie?with_genres="+genres.toString()+"&api_key=b7ef60376b50d5774e2b4318bd6e2c45&language=en-US";
 
     return this.http.get<IFetchedMoviesTypings>(sampleMovieURL).pipe(
       map(fetchedGenresObject => fetchedGenresObject.results),
